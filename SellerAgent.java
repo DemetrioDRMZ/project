@@ -1,4 +1,4 @@
-package project;
+package prueba;
 
 import jade.core.Agent;
 import jade.core.AID;
@@ -12,16 +12,16 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 import java.util.ArrayList;
 
-import project.BassicDemo;
-import project.ProductoDAO;
-import project.ProductoVO;
+import prueba.BassicDemo;
+import prueba.ProductoDAO;
+import prueba.ProductoVO;
 
 public class SellerAgent extends Agent{
 
 	private String table;
 	public BassicDemo clips;
 	public ProductoDAO dao;
-	public ProductoVO vo, tmp;
+	public ProductoVO vo;
 	public int cliente;
 	public int orden;
 	public String nombreP;
@@ -38,7 +38,6 @@ public class SellerAgent extends Agent{
 			clips = new BassicDemo();
 			dao = new ProductoDAO(table);
 			vo = new ProductoVO();
-			tmp = new ProductoVO();
 			cliente = 0;
 			orden = 0;
 			supplier = false;
@@ -116,14 +115,14 @@ public class SellerAgent extends Agent{
 			    clips.ejecutarReglas();
 			break;
 			case 2: // Verifica si todavia hay productos para vender
-			    int cantidad = Integer.parseInt(tmp.getCantidad());
+			    int cantidad = Integer.parseInt(vo.getCantidad());
 				cantidad = cantidad -1;
 			    if(cantidad == 0){ //Busca al supplier para rellenar el stock
 				    supplier = true;
 					addBehaviour(new TickerBehaviour(this, 60000) {
 						protected void onTick() {
 							if(supplier == true){
-								System.out.println("try to supplier "+ tmp.getNombre());
+								System.out.println("try to supplier "+ vo.getNombre());
 								// Update the list of seller agents
 								DFAgentDescription template = new DFAgentDescription();
 								ServiceDescription sd = new ServiceDescription();
@@ -152,20 +151,13 @@ public class SellerAgent extends Agent{
 					} ); 
 				}
 			break;
-			case 3: // verificiar si el producto no disponible es del agente
+			case 3:
 			    if(dao.ProductoVO_Existe(nombreP)){
-					tmp.setNombre(nombreP);
-					tmp.setCantidad("1");
+					vo.setNombre(nombreP);
+					vo.setCantidad("1");
 					ASK(2);	
 				}
 				
-			break;
-			case 4:
-				if(!dao.ProductoVO_Disponible(vo.getNombre())){
-					tmp.setNombre(vo.getNombre());
-					tmp.setCantidad("1");
-					ASK(2);
-				}
 			break;
 			default: System.out.println("algo pasa 2");
 		}
@@ -222,9 +214,7 @@ public class SellerAgent extends Agent{
 					System.out.println(product +" sold to agent "+ msg.getSender().getName());
 					int x = Integer.parseInt(vo.getCantidad()) - 1;
 					dao.Rellenar_ProductoVO(vo.getNombre(), Integer.toString(x));
-					ASK(4);
-					
-					
+					ASK(2);
 
 					if(cliente >= 3){
 						ASK(1);
@@ -295,7 +285,7 @@ public class SellerAgent extends Agent{
 				// Send the purchase order to the seller that provided the best offer
 				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
 				order.addReceiver(bestSupplier);
-				order.setContent(nombreP);
+				order.setContent(vo.getNombre());
 				order.setConversationId("supplier-trade");
 				order.setReplyWith("order"+System.currentTimeMillis());
 				myAgent.send(order);
@@ -311,10 +301,10 @@ public class SellerAgent extends Agent{
 					// Purchase order reply received
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						// Purchase successful. We can terminate
-						System.out.println(tmp.getNombre() +" successfully purchased from agent "+reply.getSender().getName());
+						System.out.println(vo.getNombre() +" successfully purchased from agent "+reply.getSender().getName());
 						System.out.println("Quantity = "+ canti);
 						String numero = Integer.toString(canti);
-						dao.Rellenar_ProductoVO(tmp.getNombre(), numero);
+						dao.Rellenar_ProductoVO(vo.getNombre(), numero);
 
 					}
 					else {
@@ -333,7 +323,7 @@ public class SellerAgent extends Agent{
 
 		public boolean done() {
 			if (step == 2 && bestSupplier == null) {
-				System.out.println("Attempt failed: "+tmp.getNombre()+" not available for supplier");
+				System.out.println("Attempt failed: "+vo.getNombre()+" not available for supplier");
 			}
 			return ((step == 2 && bestSupplier == null) || step == 4);
 		}
