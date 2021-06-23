@@ -173,36 +173,4 @@ public class ProductoDAO {
 
         return existe;
     }
-
-    public String ProductoVO_A_Surtir(String nombre) {
-        String nombreP = "";
-        ResultSet rs = null;
-        Conexion conec = new Conexion();
-        String sql = "SELECT nombre FROM "+ tabla +" WHERE nombre = ? AND cantidad = 0;";
-        PreparedStatement ps = null;
-        try {
-            ps = conec.getConnection().prepareStatement(sql);
-            ps.setString(1, nombre);
-            rs = ps.executeQuery();
-            while(rs.next()){
-                nombreP = rs.getString(1);
-                if(nombre.equals(rs.getString(1))){
-                     = true;
-                    System.out.println("Busqueda Exitosa");
-                }
-            }
-        } catch (SQLException ex) {
-            System.out.println("No esta disponible tal producto");
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        } finally {
-            try {
-                ps.close();
-                conec.desconectar();
-            } catch (Exception ex) {
-            }
-        }
-
-        return nombreP;
-    }
 }
